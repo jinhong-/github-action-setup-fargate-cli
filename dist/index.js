@@ -9,19 +9,29 @@ const core = __webpack_require__(493);
 const toolCache = __webpack_require__(404);
 const os = __webpack_require__(87);
 
-try {
-    // `who-to-greet` input defined in action metadata file
+
+(async () => {
+    try {
+        await setup();
+    } catch (error) {
+        core.setFailed(error.message);
+    }
+})();
+
+async function setup() {
     const cliVersion = core.getInput('cli-version');
     const osPlat = os.platform();
     const osArch = os.arch();
 
-    const pathToCli = downloadCli(osPlat, osArch, cliVersion)
-    core.addPath(pathToCli);
+    let fargateCliDirectory = toolCache.find('fargate', cliVersion);
 
-} catch (error) {
-    core.setFailed(error.message);
+    if (!fargateCliDirectory) {
+        const pathToCli = await downloadCli(osPlat, osArch, cliVersion)
+        fargateCliDirectory = await toolCache.cacheDir(pathToCli, 'fargate', cliVersion);
+    }
+
+    core.addPath(fargateCliDirectory);
 }
-
 
 async function downloadCli(os, arch, version) {
     const downloadUrl = generateDownloadUrl(os, arch, version)
@@ -31,7 +41,6 @@ async function downloadCli(os, arch, version) {
 
     core.info('Extracting Fargate CLI zip file');
     const pathToCLI = await toolCache.extractZip(pathToCLIZip);
-    core.info(`Fargate CLI path is ${pathToCLI}.`);
 
     if (!pathToCLIZip || !pathToCLI) {
         throw new Error(`Unable to download Fargate CLI from ${url}`);
