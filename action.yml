@@ -1,0 +1,10 @@
+name: "Setup Fargate CLI"
+description: "Installs fargate cli"
+inputs:
+  cli-version:
+    description: Version of the cli to download
+    required: true
+    default: "0.3.2"
+runs:
+  using: "node12"
+  main: "index.js"
